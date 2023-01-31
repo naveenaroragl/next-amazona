@@ -3,15 +3,33 @@ import { useRouter } from "next/router";
 import data from "@/utils/data";
 import Image from "next/image";
 import Link from "next/link";
+import { useContext } from "react";
+import { Store } from "@/utils/store";
+import toast from 'react-toastify';
 
 export default function ProductScreen() {
   const { query } = useRouter();
   const { slug } = query;
   const product = data.products.find((x) => x.slug === slug);
 
+  const { state, dispatch } = useContext(Store);
+  const addToCartHandler = async () => {
+    const existItem = state.cart.cartItems.find((x) => x.slug === product.slug);
+    const quantity = existItem ? existItem.quantity + 1 : 1;
+    // const { data } = await axios.get(`/api/products/${product._id}`);
+
+    if (data.countInStock < quantity) {
+      return toast.error('Sorry. Product is out of stock');
+    }
+
+    dispatch({ type: 'CART_ADD_ITEM', payload: { ...product, quantity } });
+    // router.push('/cart');
+  };
+
   if (!product) {
     return <div>Product Not found</div>;
   }
+  
   return (
     <Layout title={product.name}>
       <div className="py-2">
@@ -52,7 +70,7 @@ export default function ProductScreen() {
             </div>
             <button
               className="primary-button w-full"
-            //   onClick={addToCartHandler}
+              onClick={addToCartHandler}
             >
               Add to cart
             </button>
